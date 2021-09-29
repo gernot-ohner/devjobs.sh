@@ -78,7 +78,7 @@ object Item {
           kids = myKids,
           text = myText))
       case Some("story") => maybeId
-        .map(i => new Post(
+        .map(i => new Story(
           id = i,
           deleted = maybeDeleted,
           time = maybeTime,
@@ -87,8 +87,6 @@ object Item {
           title = myTitle))
       case _ => None
     }
-
-
   }
 }
 
@@ -102,12 +100,12 @@ class Comment(val id: Int,
   override def toString = s"Comment(id=$id, deleted=$deleted, time=$time, dead=$dead, kids=$kids, text=$text)"
 }
 
-class Post(val id: Int,
-           override val deleted: Option[Boolean] = Option.empty,
-           override val time: Option[DateTime] = Option.empty,
-           override val dead: Option[Boolean] = Option.empty,
-           override val kids: Seq[Int] = Seq.empty,
-           val title: String) extends Item {
+class Story(val id: Int,
+            override val deleted: Option[Boolean] = Option.empty,
+            override val time: Option[DateTime] = Option.empty,
+            override val dead: Option[Boolean] = Option.empty,
+            override val kids: Seq[Int] = Seq.empty,
+            val title: String) extends Item {
 
   override def toString = s"Post(id=$id, deleted=$deleted, time=$time, dead=$dead, kids=$kids, title=$title)"
 }

@@ -1,27 +1,32 @@
 package dev.ohner
 
-import model.{Comment, Item, Post}
+import model.{Comment, Item, Story}
+import service.JobPostProvider
 
 import sttp.client3._
 import sttp.model.Uri
 
 object Crawler {
 
-  def main(args: Array[String]): Unit = {
+  def crawl(): Unit = {
 
-    val items = getWhosHiringPosts
+    val items = getItems(JobPostProvider.ids.map(_.id))
+    val posts = items.filter(isStory).map(_.asInstanceOf[Story])
 
-    val comments = items.filter(isComment).map(_.asInstanceOf[Comment])
-    val posts = items.filter(isPost).map(_.asInstanceOf[Post])
+    val comments = posts.map(_.kids.take(3))
+      .flatMap(getItems) // later change this to map, I don't actually want to lose the information when
+      .filter(isComment)
+      .map(_.asInstanceOf[Comment])
+    //          .map(JobListing.fromComment)
 
-    println("posts: ")
+    println("comments: ")
     println("=" * 100)
-    posts.foreach(println)
+    comments.foreach(println)
     println("=" * 100)
   }
 
-  private def getWhosHiringPosts = {
-    JobPostProvider.ids
+  private def getItems(ids: Seq[Int]) = {
+    ids
       .map(id => getWithDefaultBackend(uri"https://hacker-news.firebaseio.com/v0/item/$id.json"))
       .map(response => response.body)
       .map(_.toOption)
@@ -37,8 +42,8 @@ object Crawler {
     case _ => false
   }
 
-  private def isPost: Item => Boolean = {
-    case _: Post => true
+  private def isStory: Item => Boolean = {
+    case _: Story => true
     case _ => false
   }
 
