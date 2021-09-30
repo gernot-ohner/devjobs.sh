@@ -1,28 +1,22 @@
 package dev.ohner
+package service
 
 import model.{Comment, Item, Story}
-import service.JobPostProvider
 
-import sttp.client3._
+import sttp.client3.{HttpURLConnectionBackend, Request, UriContext, basicRequest}
 import sttp.model.Uri
 
-object Crawler {
+object CrawlerService {
 
-  def crawl(): Unit = {
+  def crawlComments(): Seq[Comment] = {
 
     val items = getItems(JobPostProvider.ids.map(_.id))
     val posts = items.filter(isStory).map(_.asInstanceOf[Story])
 
-    val comments = posts.map(_.kids.take(3))
+    posts.map(_.kids.take(3))
       .flatMap(getItems) // later change this to map, I don't actually want to lose the information when
       .filter(isComment)
       .map(_.asInstanceOf[Comment])
-    //          .map(JobListing.fromComment)
-
-    println("comments: ")
-    println("=" * 100)
-    comments.foreach(println)
-    println("=" * 100)
   }
 
   private def getItems(ids: Seq[Int]) = {

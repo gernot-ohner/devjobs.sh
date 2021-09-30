@@ -7,6 +7,8 @@ object JobPostProvider {
 
   private val monthFormatter = DateTimeFormat.forPattern("MM/yyyy")
 
+  // TODO check out if this endpoint does what I want:
+  //   https://hackernews.api-docs.io/v0/live-data/job-hn-stories
   def ids: Seq[JobPostUri] = {
     Seq(
       JobPostUri(28380661, DateTime.parse("09/2021", monthFormatter)),

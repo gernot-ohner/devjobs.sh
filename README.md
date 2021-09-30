@@ -43,3 +43,6 @@ that is probably not a good move. fix that
 [ ] slick supports codegen of the db entity class
     use that
 
+[ ] let the data flow through a stream that converts all of the synonyms into one name before
+   committing to the db
+
