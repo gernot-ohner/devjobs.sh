@@ -10,13 +10,15 @@ object TechnologyService {
   // TODO or should this be regexes?
   def technologies(): Seq[String] = {
     // TODO get this list from somewhere else instead of hardcoding it
-    Seq(
-      "java",
-      "scala",
-      "c++",
-      "rust",
-      "c#"
-    )
+    val cs = new CrawlerService()
+    cs.crawlTechnologies()
+//    Seq(
+//      "java",
+//      "scala",
+//      "c++",
+//      "rust",
+//      "c#"
+//    )
   }
   // make an extra list for things like Go that shouldn't be case insensitive
   // TODO and I still need to handle things like "Go" vs "golang"

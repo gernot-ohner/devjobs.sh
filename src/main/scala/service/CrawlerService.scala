@@ -3,20 +3,30 @@ package service
 
 import model.{Comment, Item, Story}
 
-import sttp.client3.{HttpURLConnectionBackend, Request, UriContext, basicRequest}
+import io.circe.{Json, jawn}
+import sttp.client3.{HttpURLConnectionBackend, Identity, Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.Uri
 
-object CrawlerService {
+class CrawlerService() {
+  val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   def crawlComments(): Seq[Comment] = {
 
     val items = getItems(JobPostProvider.ids.map(_.id))
     val posts = items.filter(isStory).map(_.asInstanceOf[Story])
 
-    posts.map(_.kids.take(3))
+    posts.map(_.kids.take(5))
       .flatMap(getItems) // later change this to map, I don't actually want to lose the information when
       .filter(isComment)
       .map(_.asInstanceOf[Comment])
+  }
+
+  def crawlTechnologies(): Seq[String] = {
+    val uri = uri"https://api.stackexchange.com/2.3/tags?order=desc&sort=popular&site=stackoverflow"
+    val value: Identity[Response[Either[String, String]]] = getWithDefaultBackend(uri)
+    val maybeJson = value.body.toOption.flatMap(s => jawn.parse(s).toOption)
+    val tags = maybeJson.map(_.findAllByKey("name")).getOrElse(List.empty)
+    tags.map(_.asString).filter(_.isDefined).map(_.get)
   }
 
   private def getItems(ids: Seq[Int]) = {
@@ -41,12 +51,7 @@ object CrawlerService {
     case _ => false
   }
 
-  //noinspection SameParameterValue
   private def getWithDefaultBackend(uri: Uri) = {
-
-    // TODO creating a new BackendObject for each requests is terrible, change that later
-    val backend = HttpURLConnectionBackend()
-
     val request: Request[Either[String, String], Any] = basicRequest.get(uri)
     request.send(backend)
   }

@@ -13,7 +13,7 @@ object DbActions {
     val technologyTuples = jobListings
       .flatMap(Technology.tuplesFromJobListing)
       .distinctBy(_._2.toLowerCase)
-    val listingTuples = jobListings.map(jl => (jl.id, jl.company))
+    val listingTuples = jobListings.map(jl => (jl.id, jl.company, jl.fullText))
 
     val valueInserts = DBIO.seq(
       locations ++= locationTuples,

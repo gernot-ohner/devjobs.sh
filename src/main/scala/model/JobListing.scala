@@ -9,13 +9,13 @@ import java.util.UUID
 case class JobListing(company: String,
                       locations: Seq[LocationEntry],
                       technologies: Seq[TechnologyEntry],
-                      roles: Seq[RoleEntry]
+                      roles: Seq[RoleEntry],
+                      fullText: String
                      ) {
   val id: UUID = UUID.randomUUID()
 }
 
 object JobListing {
-
   private val paragraphRegex = raw"<p>"
   private val sectionRegex = raw"\||is a" // todo also split at "is a" in "$name is a bla" because some people don't get it
 
@@ -59,11 +59,9 @@ object JobListing {
       company = companyName,
       locations = locations,
       technologies = technologies,
-      roles = roles
+      roles = roles,
+      fullText = text
     ))
-
   }
-
-
 }
 
