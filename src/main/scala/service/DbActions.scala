@@ -8,34 +8,28 @@ import service.Queries.{listings, listingsToLocations, listingsToTechnologies, l
 object DbActions {
 
   def valueInsertAction(jobListings: Seq[JobListing]): DBIOAction[Unit, NoStream, Effect.Write] = {
-    val locationTuples = jobListings.flatMap(Location.tuplesFromJobListing)
-      .distinctBy(_._2.toLowerCase)
-    val technologyTuples = jobListings
-      .flatMap(Technology.tuplesFromJobListing)
-      .distinctBy(_._2.toLowerCase)
+    val locationTuples = jobListings.flatMap(Location.fromJobListing).distinct
+    val technologyTuples = jobListings.flatMap(Technology.fromJobListing).distinct
     val listingTuples = jobListings.map(jl => (jl.id, jl.company, jl.fullText))
 
-    val valueInserts = DBIO.seq(
+    DBIO.seq(
       locations ++= locationTuples,
       technologies ++= technologyTuples,
-      listings ++= listingTuples
+      listings ++= listingTuples,
     )
-    valueInserts
   }
 
   def associationInsertAction(jobListings: Seq[JobListing]): DBIOAction[Unit, NoStream, Effect.Write] = {
     val listingToLocationTuples = jobListings
       .flatMap(jl => jl.locations
-        .map(_.id)
-        .map((jl.id, _)))
+        .map(location => (jl.id, location.name)))
     val listingToTechnologyTuples = jobListings
       .flatMap(jl => jl.technologies
-        .map(_.id)
-        .map((jl.id, _)))
-    val joinTableInserts = DBIO.seq(
+        .map(tech => (jl.id, tech.name)))
+
+    DBIO.seq(
       listingsToLocations ++= listingToLocationTuples,
-      listingsToTechnologies ++= listingToTechnologyTuples
+      listingsToTechnologies ++= listingToTechnologyTuples,
     )
-    joinTableInserts
   }
 }

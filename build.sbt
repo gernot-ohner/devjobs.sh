@@ -25,4 +25,4 @@ libraryDependencies ++= Seq(
 
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.23"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.9"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"

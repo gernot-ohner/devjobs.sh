@@ -4,23 +4,20 @@ package model
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.ProvenShape
 
-import java.util.UUID
-
 // TODO why are these defs rather than vals?
-class Technology(tag: Tag) extends Table[(UUID, String)](tag, "TECHNOLOGY") {
-  def id = column[UUID]("TECH_ID", O.PrimaryKey)
-  def name = column[String]("TECH_NAME")
-  def * : ProvenShape[(UUID, String)] = (id, name)
+class Technology(tag: Tag) extends Table[String](tag, "TECHNOLOGY") {
+  def name = column[String]("TECH_NAME", O.PrimaryKey)
+  def * : ProvenShape[String] = name
   def name_index = index("name_idx", name, unique=true)
 }
 
 object Technology {
-  def tuplesFromJobListing(jobListing: JobListing): Seq[(UUID, String)] = {
-    jobListing.technologies.map(_.*)
+  def fromJobListing(jobListing: JobListing): Seq[String] = {
+    jobListing.technologies.map(_.*).distinct
   }
 }
 
+// TODO what is the point of this now, that it's literally a wrapper around a string?
 class TechnologyEntry(val name: String){
-  val id: UUID = UUID.randomUUID()
-  def * : (UUID, String) = (id, name)
+  def * : String = name
 }

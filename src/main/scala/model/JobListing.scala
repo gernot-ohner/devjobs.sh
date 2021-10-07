@@ -10,23 +10,31 @@ case class JobListing(company: String,
                       locations: Seq[LocationEntry],
                       technologies: Seq[TechnologyEntry],
                       roles: Seq[RoleEntry],
-                      fullText: String
+                      fullText: String,
                      ) {
   val id: UUID = UUID.randomUUID()
 }
 
 object JobListing {
   private val paragraphRegex = raw"<p>"
-  private val sectionRegex = raw"\||is a" // todo also split at "is a" in "$name is a bla" because some people don't get it
+  private val sectionRegex = raw"\||is a"
+  private val locationRegex = raw"&|;|( and )|(,(?! ?(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY) ))".r
+
+  def deduplicate(s: String): String = {
+    s.replaceAll("\\([^()]*\\)", "")
+    // TODO transform NYC into New York City
+  }
 
   def fromComment(comment: Comment): Option[JobListing] = {
 
     def parseLocations(headlineSections: Array[String]) = {
       headlineSections.lift(2)
         .toVector
-        .flatMap(_.split(",")) // TODO do not split in cases like "Philadelphia, PA"
+        .flatMap(locationRegex.split(_))
+        .map(_.toLowerCase)
+        .map(deduplicate)
         .map(_.trim)
-        //        .map(_.toLowerCase)
+        .distinct
         .map(locationName => new LocationEntry(locationName))
     }
 
@@ -60,7 +68,7 @@ object JobListing {
       locations = locations,
       technologies = technologies,
       roles = roles,
-      fullText = text
+      fullText = text,
     ))
   }
 }
