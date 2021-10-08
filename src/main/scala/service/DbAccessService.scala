@@ -1,6 +1,8 @@
 package dev.ohner
 package service
 
+import model.{Listing, ListingToLocation, ListingToTechnology}
+
 import slick.dbio.Effect
 import slick.jdbc.JdbcBackend
 import slick.jdbc.JdbcBackend.Database
@@ -13,20 +15,30 @@ import scala.concurrent.{Await, Future}
 // TODO does the fact that its a field in this class
 // mean that the DB connection gets closed if the object is destroyed?
 class DbAccessService(val db: JdbcBackend.DatabaseDef) {
-  def getListingsByLocation(targetLocation: String): Seq[(String, String)] = {
+  def getListingsByLocationAndTechnology(targetLocation: String, targetTechnology:String): Seq[(String, String)] = {
     val action = for {
-      (listing, listingToLocation) <- Queries.listings join Queries.listingsToLocations on (_.id === _.listingId)
-      if listingToLocation.locationId === targetLocation
-    } yield (listing.company, listingToLocation.locationId)
+      ((listing, listingToLocation), listingToTechnology) <- Queries.listings join Queries.listingsToLocations on (_.id === _.listingId) join Queries.listingsToTechnologies on ((tuple: (Listing, ListingToLocation), technology: ListingToTechnology) => (tuple: (Listing, ListingToLocation))._1.id === technology.listingId)
+      if listingToLocation.locationId === targetLocation && listingToTechnology.technologyId === targetTechnology
+
+    } yield (listing.company, listing.fullText)
     val result = Await.result(db.run(action.result), Duration.create("5s"))
     result
   }
 
-  def getCompaniesByTechnology(targetTechnology: String): Seq[(String, String)] = {
+  def getListingsByLocation(targetLocation: String): Seq[(String, String)] = {
+    val action = for {
+      (listing, listingToLocation) <- Queries.listings join Queries.listingsToLocations on (_.id === _.listingId)
+      if listingToLocation.locationId === targetLocation
+    } yield (listing.company, listing.fullText)
+    val result = Await.result(db.run(action.result), Duration.create("5s"))
+    result
+  }
+
+  def getListingsByTechnology(targetTechnology: String): Seq[(String, String)] = {
     val action = for {
       (listing, listingToTechnology) <- Queries.listings join Queries.listingsToTechnologies on (_.id === _.listingId)
       if listingToTechnology.technologyId === targetTechnology
-    } yield (listing.company, listingToTechnology.technologyId)
+    } yield (listing.company, listing.fullText)
     val result = Await.result(db.run(action.result), Duration.create("5s"))
     result
   }
