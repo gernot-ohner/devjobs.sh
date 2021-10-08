@@ -12,13 +12,21 @@ import scala.concurrent.{Await, Future}
 // TODO does the fact that its a field in this class
 // mean that the DB connection gets closed if the object is destroyed?
 class DbAccessService(val db: JdbcBackend.DatabaseDef) {
-
-  def misc(): Unit = {
-
-    val result = Queries.listings.result
-    val x = db.run(result)
-    val xy = Await.result(x, Duration.create("5s"))
+  def getCompaniesByLocation(targetLocation: String): Seq[(String, String)] = {
+    val action = for {
+      (listing, listingToLocation) <- Queries.listings join Queries.listingsToLocations on (_.id === _.listingId)
+      if listingToLocation.locationId === targetLocation
+    } yield (listing.company, listingToLocation.locationId)
+    val result = Await.result(db.run(action.result), Duration.create("5s"))
+    result
   }
+
+  def getTechnologies: Seq[String] = {
+    val action = Queries.technologies.sortBy(_.name).result
+    val result = Await.result(db.run(action), Duration.create("5s"))
+    result
+  }
+
 
   def close(): Unit = db.close()
 
@@ -34,7 +42,7 @@ class DbAccessService(val db: JdbcBackend.DatabaseDef) {
     db.run(action)
   }
 
-  def runInsertAsync(action: DBIOAction[Unit, NoStream, Effect.Write]): Unit = {
+  def runInsertSync(action: DBIOAction[Unit, NoStream, Effect.Write]): Unit = {
     Await.result(db.run(action), Duration.create(5, "s"))
   }
 }
@@ -46,7 +54,7 @@ object DbAccessService {
         url = "jdbc:postgresql://localhost:5432/postgres",
         user = "postgres",
         password = "example",
-        driver = "org.postgresql.Driver")
+        driver = "org.postgresql.Driver"),
     )
   }
 }
