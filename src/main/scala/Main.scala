@@ -22,10 +22,17 @@ object Main {
     val joinTableInserts = associationInsertAction(jobListings)
     dba.runInsertSync(valueInserts.andThen(joinTableInserts))
 
-    val result = dba.getCompaniesByLocation("boston")
+    val locations = dba.getLocations
+    val technologies = dba.getTechnologies
+    val listingsInBoston = dba.getListingsByLocation("boston")
+    val listingsWithJava = dba.getCompaniesByTechnology("java")
+    val listings = dba.getListings
 
-    println(result.size)
-    println(result)
+    println(s"Found ${listings.size} listings")
+    println(s"Found ${locations.size} locations")
+    println(s"Found ${technologies.size} technologies: $technologies")
+    println(s"Found ${listingsInBoston.size} listingsInBoston: $listingsInBoston")
+    println(s"Found ${listingsWithJava.size} listingsWithJava: $listingsWithJava")
 
     dba.close()
   }

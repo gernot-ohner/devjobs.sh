@@ -6,13 +6,14 @@ import slick.jdbc.JdbcBackend
 import slick.jdbc.JdbcBackend.Database
 import slick.jdbc.PostgresProfile.api._
 
+import java.util.UUID
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 // TODO does the fact that its a field in this class
 // mean that the DB connection gets closed if the object is destroyed?
 class DbAccessService(val db: JdbcBackend.DatabaseDef) {
-  def getCompaniesByLocation(targetLocation: String): Seq[(String, String)] = {
+  def getListingsByLocation(targetLocation: String): Seq[(String, String)] = {
     val action = for {
       (listing, listingToLocation) <- Queries.listings join Queries.listingsToLocations on (_.id === _.listingId)
       if listingToLocation.locationId === targetLocation
@@ -21,8 +22,29 @@ class DbAccessService(val db: JdbcBackend.DatabaseDef) {
     result
   }
 
+  def getCompaniesByTechnology(targetTechnology: String): Seq[(String, String)] = {
+    val action = for {
+      (listing, listingToTechnology) <- Queries.listings join Queries.listingsToTechnologies on (_.id === _.listingId)
+      if listingToTechnology.technologyId === targetTechnology
+    } yield (listing.company, listingToTechnology.technologyId)
+    val result = Await.result(db.run(action.result), Duration.create("5s"))
+    result
+  }
+
   def getTechnologies: Seq[String] = {
     val action = Queries.technologies.sortBy(_.name).result
+    val result = Await.result(db.run(action), Duration.create("5s"))
+    result
+  }
+
+  def getLocations: Seq[String] = {
+    val action = Queries.locations.sortBy(_.name).result
+    val result = Await.result(db.run(action), Duration.create("5s"))
+    result
+  }
+
+  def getListings: Seq[(UUID, String, String)] = {
+    val action = Queries.listings.result
     val result = Await.result(db.run(action), Duration.create("5s"))
     result
   }
