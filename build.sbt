@@ -26,3 +26,10 @@ libraryDependencies ++= Seq(
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.23"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
+
+val http4sVersion = "0.23.4"
+libraryDependencies ++= Seq(
+  "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion
+)
