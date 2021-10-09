@@ -3,25 +3,15 @@ package dev.ohner
 import model.JobListing
 import service.DbActions.{associationInsertAction, valueInsertAction}
 import service.{CrawlerService, DbAccessService}
-import web.ListingService
 
-import cats.effect.{ExitCode, IO, IOApp}
-import org.http4s.blaze.server.BlazeServerBuilder
+object Crawler {
 
-import scala.concurrent.ExecutionContext.Implicits.global
+  var currentQueryDescription = ""
+  var listings: Seq[(String, String)] = Seq()
 
-object Main extends IOApp {
-
-  def run(args: List[String]): IO[ExitCode] = {
-    val httpApp = ListingService.listingService.orNotFound
-    val serverBuilder = BlazeServerBuilder[IO](global)
-      .bindHttp(8080, "localhost")
-      .withHttpApp(httpApp)
-      .serve
-      .compile
-      .drain
-      .as(ExitCode.Success)
-    serverBuilder
+  def main(args: Array[String]): Unit = {
+    fillDb()
+    testDba()
   }
 
 
@@ -45,7 +35,7 @@ object Main extends IOApp {
     val locations = dba.getLocations
     val technologies = dba.getTechnologies
     val listingsInBoston = dba.getListingsByLocation("boston")
-    val listingsWithJava = dba.getListingsByTechnology("java")
+    val listingsWithJava = dba.getListingsByTechnology("scala")
     val listings = dba.getListings
 
     println(s"Found ${listings.size} listings")

@@ -3,8 +3,6 @@ package service
 
 import model.TechnologyEntry
 
-import scala.util.matching.Regex
-
 object TechnologyService {
 
 

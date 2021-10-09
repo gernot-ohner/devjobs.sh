@@ -3,7 +3,7 @@ package service
 
 import model.{Comment, Item, Story}
 
-import io.circe.{Json, jawn}
+import io.circe.jawn
 import sttp.client3.{HttpURLConnectionBackend, Identity, Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.Uri
 
@@ -11,7 +11,6 @@ class CrawlerService() {
   val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   def crawlComments(): Seq[Comment] = {
-
     val items = getItems(JobPostProvider.ids.map(_.id))
     val posts = items.filter(isStory).map(_.asInstanceOf[Story])
 
@@ -37,7 +36,7 @@ class CrawlerService() {
       .filter(_.isDefined)
       .map(_.get)
       .map(Item.parseFromString)
-      .filter(_.isDefined) // so ugly! see if I can come up with a better way
+      .filter(_.isDefined)
       .map(_.get)
   }
 
