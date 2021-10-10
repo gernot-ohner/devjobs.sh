@@ -32,6 +32,8 @@ provide a nice interface to go through the posts from the hn jobs post
 - automate the table & table schema creation
 - put the entire thing in a docker container
 - with all the Seq[String]s I have in my model, doing a NoSQL db might actually be better!
+- add metrics with http4s prometheus middleware
+- ADD TESTS
 ## Todos
 
 [x] exchange ujson (which is super nice but uses mutability)
