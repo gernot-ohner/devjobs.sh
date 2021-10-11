@@ -14,7 +14,7 @@ class CrawlerService() {
     val items = getItems(JobPostProvider.ids.map(_.id))
     val posts = items.filter(isStory).map(_.asInstanceOf[Story])
 
-    posts.map(_.kids.take(20))
+    posts.map(_.kids)
       .flatMap(getItems) // later change this to map, I don't actually want to lose the information when
       .filter(isComment)
       .map(_.asInstanceOf[Comment])

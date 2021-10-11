@@ -6,19 +6,21 @@ import service.{CrawlerService, DbAccessService}
 
 object Crawler {
 
-  var currentQueryDescription = ""
-  var listings: Seq[(String, String)] = Seq()
-
   def main(args: Array[String]): Unit = {
-    fillDb()
-    testDba()
+    // TODO this looks about as un-functional as it gets!
+    createTables()
+    fillTables()
+    explainTables()
   }
 
-
-  def fillDb(): Unit = {
+  def createTables(): Unit = {
     val dba = DbAccessService.establishConnection()
     dba.createTables()
+    dba.close()
+  }
 
+  def fillTables(): Unit = {
+    val dba = DbAccessService.establishConnection()
     val cs = new CrawlerService()
     val jobListings = cs.crawlComments()
       .map(JobListing.fromComment)
@@ -30,7 +32,7 @@ object Crawler {
     dba.close()
   }
 
-  def testDba(): Unit = {
+  def explainTables(): Unit = {
     val dba = DbAccessService.establishConnection()
     val locations = dba.getLocations
     val technologies = dba.getTechnologies
@@ -45,5 +47,4 @@ object Crawler {
     println(s"Found ${listingsWithJava.size} listingsWithJava: $listingsWithJava")
     dba.close()
   }
-
 }

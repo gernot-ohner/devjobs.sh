@@ -1,6 +1,6 @@
 package dev.ohner
 
-import web.{ApiService, ListingService}
+import controllers.{ApiController, ListingController}
 
 import cats.effect.{ExitCode, IO, IOApp}
 import org.http4s.blaze.server.BlazeServerBuilder
@@ -10,8 +10,8 @@ import org.http4s.server.Router
 object Server extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val httpApp = Router(
-      "/" -> ListingService.htmlService,
-      "/api"-> ApiService.apiService)
+      "/" -> ListingController.htmlService,
+      "/api"-> ApiController.apiService)
       .orNotFound
 
     BlazeServerBuilder[IO]

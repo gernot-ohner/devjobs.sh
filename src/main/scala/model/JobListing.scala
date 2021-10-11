@@ -22,11 +22,9 @@ object JobListing {
   private val sectionRegex = raw"\||is a"
 
   def fromComment(comment: Comment): Option[JobListing] = {
-
-
-    val text = comment.text
-
-    val paragraphs = text.split(paragraphRegex)
+    // TODO not that it make the code a whole lot better,
+    //   but I think there is a way to rewrite this with for comprehension
+    val paragraphs = comment.text.split(paragraphRegex)
     if (paragraphs.isEmpty) return None
 
     val headlineSections = paragraphs.head.split(sectionRegex)
@@ -35,14 +33,14 @@ object JobListing {
     val companyName = parseCompanyName(headlineSections)
     val locations = parseLocations(headlineSections)
     val roles = parseRoles(headlineSections)
-    val technologies = TechnologyService.findTechnologies(text.toLowerCase)
+    val technologies = TechnologyService.findTechnologies(comment.text.toLowerCase)
 
     Some(JobListing(
       company = companyName,
       locations = locations,
       technologies = technologies,
       roles = roles,
-      fullText = text,
+      fullText = comment.text,
     ))
   }
 }

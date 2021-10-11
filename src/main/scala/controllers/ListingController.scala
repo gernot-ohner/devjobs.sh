@@ -1,5 +1,5 @@
 package dev.ohner
-package web
+package controllers
 
 import service.DbAccessService
 import ui.Pages
@@ -10,12 +10,10 @@ import org.http4s.dsl.io._
 import org.http4s.scalatags.scalatagsEncoder
 import org.http4s.{HttpRoutes, Request}
 
-object ListingService {
+object ListingController {
 
   def htmlService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
-      // TODO is there a pattern to dry this up?
-      //   like ...with(DBA)
       case request@POST -> Root / "listings" =>
         val arguments = parseArguments(request)
         val listings = getListings(arguments)

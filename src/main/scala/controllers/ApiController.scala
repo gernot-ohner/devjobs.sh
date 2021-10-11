@@ -1,5 +1,5 @@
 package dev.ohner
-package web
+package controllers
 
 import service.DbAccessService
 
@@ -7,7 +7,7 @@ import cats.effect.IO
 import org.http4s.HttpRoutes
 import org.http4s.dsl.io._
 
-object ApiService {
+object ApiController {
 
   object LocationParamMatcher extends QueryParamDecoderMatcher[String]("location")
 

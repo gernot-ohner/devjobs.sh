@@ -55,12 +55,12 @@ class DbAccessService(val db: JdbcBackend.DatabaseDef) {
     result
   }
 
+  // TODO make all this async
   def getListings: Seq[(UUID, String, String)] = {
     val action = Queries.listings.result
     val result = Await.result(db.run(action), Duration.create("5s"))
     result
   }
-
 
   def close(): Unit = db.close()
 
@@ -84,6 +84,7 @@ class DbAccessService(val db: JdbcBackend.DatabaseDef) {
 object DbAccessService {
   def establishConnection(): DbAccessService = {
     new DbAccessService(
+      // TODO move this out to a config file
       Database.forURL(
         url = "jdbc:postgresql://localhost:5432/postgres",
         user = "postgres",
