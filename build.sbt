@@ -35,3 +35,10 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
   "org.http4s" %% "http4s-scalatags" % http4sVersion
 )
+
+lazy val doobieVersion = "1.0.0-RC1"
+libraryDependencies ++= Seq(
+  "org.tpolecat" %% "doobie-core"     % doobieVersion,
+  "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+  "org.tpolecat" %% "doobie-specs2"   % doobieVersion
+)
