@@ -27,6 +27,8 @@ provide a nice interface to go through the posts from the hn jobs post
   - (though that requires that I go through ever post again!)
  
 - also add the functionality to filter by company
+- fix the encoding issues
+    maybe relevant: https://en.wikipedia.org/wiki/Percent-encoding
 
 - make the entire thing asynchronous.
 - automate the table & table schema creation
