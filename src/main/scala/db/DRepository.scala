@@ -1,56 +1,48 @@
 package dev.ohner
 package db
 
+import config.{DbConfig, FullConfig}
 import model._
 
 import cats.effect._
 import doobie._
 import doobie.implicits._
-import doobie.util.transactor.Transactor.Aux
 import doobie.postgres.implicits._
+import doobie.util.transactor.Transactor.Aux
 
-object DRepository {
-
-  // TODO obviously, I actually want to get this data from a config file
-  val xa: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql://localhost:5432/postgres",
-    "postgres",
-    "example",
-  )
-
-
-  def listings: doobie.Query0[DListing] =
+class DRepository(val xa: Aux[IO, Unit]) {
+  def listings =
     sql"""
         SELECT id, company, fulltext
         FROM listings
-    """.query[DListing]
+    """.query[DListing].to[List].transact(xa)
 
-  def listingsByCompany(name: String): doobie.Query0[DListing] =
+  def listingsByCompany(name: String) =
     sql"""
         SELECT id, company, fulltext
         FROM listings
         where company LIKE $name
-    """.query[DListing]
+    """.query[DListing].to[List].transact(xa)
 
-  def listingByTechnology(tech: String): doobie.Query0[DListing] =
+
+  def listingByTechnology(tech: String) =
     sql"""
         SELECT l.id, l.company, l.fulltext
         FROM listings as l
         INNER JOIN listing_to_technology as lt ON l.id = lt.listing_id
         WHERE lt.technology = $tech
-    """.query[DListing]
+    """.query[DListing].to[List].transact(xa)
 
 
-  def listingByLocation(location: String): doobie.Query0[DListing] =
+  def listingByLocation(location: String) =
     sql"""
         SELECT l.id, l.company, l.fulltext
         FROM listings as l
         INNER JOIN listing_to_location as ll ON l.id = ll.listing_id
         WHERE ll.location = $location
-    """.query[DListing]
+    """.query[DListing].to[List].transact(xa)
 
-  def listingByLocationAndTechnology(location: String, tech: String): doobie.Query0[DListing] =
+  def listingByLocationAndTechnology(location: String, tech: String) =
     sql"""
         SELECT l.id, l.company, l.fulltext
         FROM listings as l
@@ -58,17 +50,25 @@ object DRepository {
         INNER JOIN listing_to_technology as lt on l.id = lt.listing_id
         WHERE ll.location = $location
         AND   lt.technology = $tech
-       """.query[DListing]
+    """.query[DListing].to[List].transact(xa)
 
-  def locations: doobie.Query0[DLocation] =
+  def locations =
     sql"""
         SELECT *
         FROM locations
-       """.query[DLocation]
+    """.query[DLocation].to[List].transact(xa)
 
-  def technologies: doobie.Query0[DTechnology] =
+  def technologies =
     sql"""
         SELECT *
         FROM technologies
-       """.query[DTechnology]
+    """.query[DTechnology].to[List].transact(xa)
+}
+
+object DRepository {
+  def fromDefaultConfig = {
+    val dbConfig = FullConfig.load.map(c => c.database)
+    dbConfig.map(dbc => new DRepository(
+        Transactor.fromDriverManager[IO](dbc.driver, dbc.url, dbc.user, dbc.pw)))
+  }
 }

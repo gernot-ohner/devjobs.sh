@@ -8,7 +8,7 @@ import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import org.http4s.dsl.io._
 import org.http4s.scalatags.scalatagsEncoder
-import org.http4s.{HttpRoutes, Request, Response}
+import org.http4s.{HttpRoutes, Request}
 
 object ListingController {
 
