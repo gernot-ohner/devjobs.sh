@@ -13,16 +13,18 @@ object ApiController {
 
   object TechnologyParamMatcher extends QueryParamDecoderMatcher[String]("technology")
 
+  val dbService = DbService.fromDefaultConfig
+
   def apiService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case GET -> Root / "listings" :? LocationParamMatcher(location) +& TechnologyParamMatcher(technology) =>
-        Ok(DbService.listingsByLocationAndTechnology(location, technology).map(_.mkString(", ")))
+        Ok(dbService.flatMap(_.listingsByLocationAndTechnology(location, technology).map(_.mkString(", "))))
       case GET -> Root / "listings" :? TechnologyParamMatcher(technology) =>
-        Ok(DbService.listingsByTechnology(technology).map(_.mkString(", ")))
+        Ok(dbService.flatMap(_.listingsByTechnology(technology).map(_.mkString(", "))))
       case GET -> Root / "technologies" =>
-        Ok(DbService.technologies.map(_.mkString(", ")))
+        Ok(dbService.flatMap(_.technologies.map(_.mkString(", "))))
       case GET -> Root / "locations" =>
-        Ok(DbService.locations.map(_.mkString(", ")))
+        Ok(dbService.flatMap(_.locations.map(_.mkString(", "))))
     }
   }
 }

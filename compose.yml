@@ -11,6 +11,14 @@ services:
     ports:
       - "5432:5432"
 
+  test_db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: test
+    ports:
+      - "15432:5432"
+
   adminer:
     image: adminer
     restart: always

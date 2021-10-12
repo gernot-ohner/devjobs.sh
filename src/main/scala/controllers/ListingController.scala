@@ -12,6 +12,8 @@ import org.http4s.{HttpRoutes, Request}
 
 object ListingController {
 
+  val dbService = DbService.fromDefaultConfig
+
   def htmlService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case request@POST -> Root / "listings" =>
@@ -37,13 +39,13 @@ object ListingController {
 
   private def getListings(arguments: Map[String, String]) = {
     if (arguments.contains("location") && arguments.contains("technology")) {
-      DbService.listingsByLocationAndTechnology(arguments("location"), arguments("technology"))
+      dbService.flatMap(_.listingsByLocationAndTechnology(arguments("location"), arguments("technology")))
     } else if (arguments.contains("location")) {
-      DbService.listingsByLocation(arguments("location"))
+      dbService.flatMap(_.listingsByLocation(arguments("location")))
     } else if (arguments.contains("technology")) {
-      DbService.listingsByTechnology(arguments("technology"))
+      dbService.flatMap(_.listingsByTechnology(arguments("technology")))
     } else {
-      DbService.listings
+      dbService.flatMap(_.listings)
     }
   }
 }

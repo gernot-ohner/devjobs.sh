@@ -39,7 +39,7 @@ lazy val doobieVersion = "1.0.0-RC1"
 libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core"     % doobieVersion,
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
-  "org.tpolecat" %% "doobie-specs2"   % doobieVersion
+  "org.tpolecat" %% "doobie-scalatest"   % doobieVersion
 )
 
 libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.17.0"
