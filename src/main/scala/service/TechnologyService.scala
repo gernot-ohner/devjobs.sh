@@ -1,11 +1,11 @@
 package dev.ohner
 package service
 
-import model.TechnologyEntry
+import model.DTechnology
 
 object TechnologyService {
   // TODO deal with technologies like C and R
-  def technologies(): Seq[String] = {
+  val technologies: Seq[String] = {
     val cs = new CrawlerService()
     cs.crawlTechnologies()
   }
@@ -17,7 +17,7 @@ object TechnologyService {
   //   if it's standalone (i.e. surrounded by whitespace or punctuation)
 
   // TODO I might want to make technologies their own type at some point
-  def findTechnologies(source: String): Seq[TechnologyEntry] = {
+  def findTechnologies(source: String): Seq[DTechnology] = {
     // TODO make this more efficient!
     //   is there actually a way to make this more efficient than O(n * m)
     //   where n is number of words in source and m is number of technologies?
@@ -26,8 +26,8 @@ object TechnologyService {
     //   technology and captures what it matched
 
     // TODO profile how much time is spent here
-    technologies()
+    technologies
       .filter(tech => source.contains(tech.toLowerCase))
-      .map(new TechnologyEntry(_))
+      .map(DTechnology)
   }
 }

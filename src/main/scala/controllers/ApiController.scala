@@ -18,13 +18,13 @@ object ApiController {
   def apiService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case GET -> Root / "listings" :? LocationParamMatcher(location) +& TechnologyParamMatcher(technology) =>
-        Ok(dbService.flatMap(_.listingsByLocationAndTechnology(location, technology).map(_.mkString(", "))))
+        Ok(dbService.listingsByLocationAndTechnology(location, technology).map(_.mkString(", ")))
       case GET -> Root / "listings" :? TechnologyParamMatcher(technology) =>
-        Ok(dbService.flatMap(_.listingsByTechnology(technology).map(_.mkString(", "))))
+        Ok(dbService.listingsByTechnology(technology).map(_.mkString(", ")))
       case GET -> Root / "technologies" =>
-        Ok(dbService.flatMap(_.technologies.map(_.mkString(", "))))
+        Ok(dbService.technologies.map(_.mkString(", ")))
       case GET -> Root / "locations" =>
-        Ok(dbService.flatMap(_.locations.map(_.mkString(", "))))
+        Ok(dbService.locations.map(_.mkString(", ")))
     }
   }
 }

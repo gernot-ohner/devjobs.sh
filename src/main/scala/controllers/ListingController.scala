@@ -26,6 +26,7 @@ object ListingController {
   }
 
   private def parseArguments(request: Request[IO]) = {
+
     request.body
       .map(c => c.toChar)
       .split(_ == '&')
@@ -39,13 +40,13 @@ object ListingController {
 
   private def getListings(arguments: Map[String, String]) = {
     if (arguments.contains("location") && arguments.contains("technology")) {
-      dbService.flatMap(_.listingsByLocationAndTechnology(arguments("location"), arguments("technology")))
+      dbService.listingsByLocationAndTechnology(arguments("location"), arguments("technology"))
     } else if (arguments.contains("location")) {
-      dbService.flatMap(_.listingsByLocation(arguments("location")))
+      dbService.listingsByLocation(arguments("location"))
     } else if (arguments.contains("technology")) {
-      dbService.flatMap(_.listingsByTechnology(arguments("technology")))
+      dbService.listingsByTechnology(arguments("technology"))
     } else {
-      dbService.flatMap(_.listings)
+      dbService.listings
     }
   }
 }
