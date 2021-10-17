@@ -1,7 +1,9 @@
 package dev.ohner
 package service
 
-import model.{LocationEntry, RoleEntry}
+import model.DLocation
+
+import java.util.UUID
 
 object ParserService {
 
@@ -16,7 +18,7 @@ object ParserService {
       .replaceAll("(?i)NYC", "New York City")
   }
 
-  def parseLocations(headlineSections: Array[String]): Seq[LocationEntry] = {
+  def parseLocations(headlineSections: Array[String]): Seq[DLocation] = {
     headlineSections.lift(2)
       .toVector
       .flatMap(locationRegex.split(_))
@@ -25,15 +27,8 @@ object ParserService {
       .map(normalizeLocation)
       .map(_.trim)
       .distinct
-      .map(locationName => new LocationEntry(locationName))
-  }
-
-  def parseRoles(headlineSections: Array[String]): Seq[RoleEntry] = {
-    headlineSections.lift(1)
-      .map(_.split("or|,"))
-      .getOrElse(Array.empty)
-      .map(_.trim)
-      .map(new RoleEntry(_))
+      // TODO fix this
+      .map(locationName => DLocation(UUID.randomUUID(), locationName))
   }
 
   def parseCompanyName(headlineSections: Array[String]): String = {
@@ -44,6 +39,4 @@ object ParserService {
     s.replaceAll("\\([^()]*\\)", "")
     // TODO transform NYC into New York City
   }
-
-
 }

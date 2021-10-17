@@ -1,7 +1,7 @@
 package dev.ohner
 package controllers
 
-import service.DbAccessService
+import service.DbService
 
 import cats.effect.IO
 import org.http4s.HttpRoutes
@@ -13,28 +13,18 @@ object ApiController {
 
   object TechnologyParamMatcher extends QueryParamDecoderMatcher[String]("technology")
 
+  val dbService = DbService.fromDefaultConfig
+
   def apiService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case GET -> Root / "listings" :? LocationParamMatcher(location) +& TechnologyParamMatcher(technology) =>
-        val dba = DbAccessService.establishConnection()
-        val result = Ok(dba.getListingsByLocationAndTechnology(location, technology).mkString(", "))
-        dba.close()
-        result
+        Ok(dbService.listingsByLocationAndTechnology(location, technology).map(_.mkString(", ")))
       case GET -> Root / "listings" :? TechnologyParamMatcher(technology) =>
-        val dba = DbAccessService.establishConnection()
-        val result = Ok(dba.getListingsByTechnology(technology).mkString(", "))
-        dba.close()
-        result
+        Ok(dbService.listingsByTechnology(technology).map(_.mkString(", ")))
       case GET -> Root / "technologies" =>
-        val dba = DbAccessService.establishConnection()
-        val result = Ok(dba.getTechnologies.mkString(", "))
-        dba.close()
-        result
+        Ok(dbService.technologies.map(_.mkString(", ")))
       case GET -> Root / "locations" =>
-        val dba = DbAccessService.establishConnection()
-        val result = Ok(dba.getLocations.mkString(", "))
-        dba.close()
-        result
+        Ok(dbService.locations.map(_.mkString(", ")))
     }
   }
 }

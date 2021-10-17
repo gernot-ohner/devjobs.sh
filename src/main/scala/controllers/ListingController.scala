@@ -1,54 +1,52 @@
 package dev.ohner
 package controllers
 
-import service.DbAccessService
+import service.DbService
 import ui.Pages
 
 import cats.effect.IO
-import cats.effect.unsafe.implicits.global
+import fs2.Chunk
 import org.http4s.dsl.io._
 import org.http4s.scalatags.scalatagsEncoder
 import org.http4s.{HttpRoutes, Request}
 
 object ListingController {
 
+  val dbService = DbService.fromDefaultConfig
+
   def htmlService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case request@POST -> Root / "listings" =>
-        val arguments = parseArguments(request)
-        val listings = getListings(arguments)
-        Ok(Pages.index("", listings))
+        parseArguments(request)
+          .flatMap(arguments => getListings(arguments))
+          .flatMap(listings => Ok(Pages.index("", listings)))
       case GET -> Root / "listings" =>
         Ok(Pages.index("", Seq()))
     }
   }
 
   private def parseArguments(request: Request[IO]) = {
-    // TODO this is a terrible way to do this!
-    // TODO the functional way is to just hand over the stream and not evaluate it here
-    val byteVector = request.body.compile.toVector.unsafeRunSync()
-    val body = byteVector.map((c: Byte) => c.toChar).mkString
-    val arguments = body.split("&")
-      .map(_.split("="))
-      .map(arr => (arr.headOption, arr.lastOption))
+
+    request.body
+      .map(c => c.toChar)
+      .split(_ == '&')
+      .map((c: Chunk[Char]) => c.toString())
+      .map(s => s.split("="))
+      .map(arr => (arr.headOption, arr.lift(1)))
       .filter(kv => kv._1.isDefined && kv._2.isDefined)
       .map(kv => (kv._1.get, kv._2.get))
-      .toMap
-    arguments
+      .compile.toList.map(_.toMap)
   }
 
   private def getListings(arguments: Map[String, String]) = {
-    val dba = DbAccessService.establishConnection()
-    val listings = if (arguments.contains("location") && arguments.contains("technology")) {
-      dba.getListingsByLocationAndTechnology(arguments("location"), arguments("technology"))
+    if (arguments.contains("location") && arguments.contains("technology")) {
+      dbService.listingsByLocationAndTechnology(arguments("location"), arguments("technology"))
     } else if (arguments.contains("location")) {
-      dba.getListingsByLocation(arguments("location"))
+      dbService.listingsByLocation(arguments("location"))
     } else if (arguments.contains("technology")) {
-      dba.getListingsByTechnology("technology")
+      dbService.listingsByTechnology(arguments("technology"))
     } else {
-      dba.getListings.map(l => (l._2, l._3))
+      dbService.listings
     }
-    dba.close()
-    listings
   }
 }

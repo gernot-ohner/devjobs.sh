@@ -1,50 +1,56 @@
 package dev.ohner
 
-import model.JobListing
-import service.DbActions.{associationInsertAction, valueInsertAction}
-import service.{CrawlerService, DbAccessService}
+import model.{DListing, JobListing}
+
+import service.{CrawlerService, DbService}
+
+import cats.effect.unsafe.implicits.global
 
 object Crawler {
 
   def main(args: Array[String]): Unit = {
-    // TODO this looks about as un-functional as it gets!
     createTables()
     fillTables()
     explainTables()
   }
 
-  def createTables(): Unit = {
-    val dba = DbAccessService.establishConnection()
-    dba.createTables()
-    dba.close()
+  private def createTables(): Unit = {
+    val service = DbService.fromDefaultConfig
+    val tableCreationResult = service.createTables
+    println(tableCreationResult)
   }
 
-  def fillTables(): Unit = {
-    val dba = DbAccessService.establishConnection()
+  private def fillTables(): Unit = {
+    val service = DbService.fromDefaultConfig
     val cs = new CrawlerService()
-    val jobListings = cs.crawlComments()
+    val jobListings = cs.crawlComments().take(5)
       .map(JobListing.fromComment)
       .filter(_.isDefined)
       .map(_.get)
-    val valueInserts = valueInsertAction(jobListings)
-    val joinTableInserts = associationInsertAction(jobListings)
-    dba.runInsertSync(valueInserts.andThen(joinTableInserts))
-    dba.close()
+    val listings = jobListings.map(jl => DListing(jl.id, jl.company, jl.text))
+
+    val insertListingsResult = service.insertListings(listings)
+    val insertLocations = jobListings.map(jl => jl.locations).map(service.insertLocations)
+    val insertTechnologies = jobListings.map(jl => jl.technologies).map(service.insertTechnologies)
+    val insertLocationRelationResult = jobListings.map(jl =>
+      jl.locations.map(loc =>
+        service.insertLocationRelation(jl.id, loc.id)))
+    val insertTechnologyRelationResult = jobListings.map(jl =>
+      jl.technologies.map(tech =>
+        service.insertTechnologyRelation(jl.id, tech.id)))
+
+    println(insertListingsResult)
+    println(insertLocations)
+    println(insertTechnologies)
+    println(insertLocationRelationResult)
+    println(insertTechnologyRelationResult)
   }
 
-  def explainTables(): Unit = {
-    val dba = DbAccessService.establishConnection()
-    val locations = dba.getLocations
-    val technologies = dba.getTechnologies
-    val listingsInBoston = dba.getListingsByLocation("boston")
-    val listingsWithJava = dba.getListingsByTechnology("scala")
-    val listings = dba.getListings
-
-    println(s"Found ${listings.size} listings")
-    println(s"Found ${locations.size} locations")
-    println(s"Found ${technologies.size} technologies: $technologies")
-    println(s"Found ${listingsInBoston.size} listingsInBoston: $listingsInBoston")
-    println(s"Found ${listingsWithJava.size} listingsWithJava: $listingsWithJava")
-    dba.close()
+  private def explainTables(): Unit = {
+    val service = DbService.fromDefaultConfig
+    service.listingsByTechnology("java").attempt.map(println(_)).unsafeRunSync()
+    service.listingsByLocation("remote").attempt.map(println(_)).unsafeRunSync()
+    service.listingsByLocationAndTechnology("remote", "java")
+      .map(println).unsafeRunSync()
   }
 }

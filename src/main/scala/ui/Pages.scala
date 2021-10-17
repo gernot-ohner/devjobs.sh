@@ -27,8 +27,8 @@ object Pages {
           br,
           if(currentQueryDescription.nonEmpty) { p(b(currentQueryDescription)) } else {},
           div(
-            for ((name, fullText) <- listings)
-              yield p(b(name), p(fullText)),
+            for ((name, text) <- listings)
+              yield p(b(name), p(text)),
           ),
         ),
       ),

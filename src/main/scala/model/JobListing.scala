@@ -2,16 +2,15 @@ package dev.ohner
 package model
 
 
-import service.ParserService.{parseCompanyName, parseLocations, parseRoles}
+import service.ParserService.{parseCompanyName, parseLocations}
 import service.TechnologyService
 
 import java.util.UUID
 
 case class JobListing(company: String,
-                      locations: Seq[LocationEntry],
-                      technologies: Seq[TechnologyEntry],
-                      roles: Seq[RoleEntry],
-                      fullText: String,
+                      locations: Seq[DLocation],
+                      technologies: Seq[DTechnology],
+                      text: String,
                      ) {
   val id: UUID = UUID.randomUUID()
 }
@@ -32,15 +31,13 @@ object JobListing {
 
     val companyName = parseCompanyName(headlineSections)
     val locations = parseLocations(headlineSections)
-    val roles = parseRoles(headlineSections)
     val technologies = TechnologyService.findTechnologies(comment.text.toLowerCase)
 
     Some(JobListing(
       company = companyName,
       locations = locations,
       technologies = technologies,
-      roles = roles,
-      fullText = comment.text,
+      text = comment.text,
     ))
   }
 }
