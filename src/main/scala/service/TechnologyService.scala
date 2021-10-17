@@ -3,6 +3,8 @@ package service
 
 import model.DTechnology
 
+import java.util.UUID
+
 object TechnologyService {
   // TODO deal with technologies like C and R
   val technologies: Seq[String] = {
@@ -28,6 +30,6 @@ object TechnologyService {
     // TODO profile how much time is spent here
     technologies
       .filter(tech => source.contains(tech.toLowerCase))
-      .map(DTechnology)
+      .map(tech => DTechnology(UUID.randomUUID(), tech))
   }
 }

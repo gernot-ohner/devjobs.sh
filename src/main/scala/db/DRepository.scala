@@ -9,28 +9,26 @@ import doobie.postgres.implicits._
 import java.util.UUID
 
 object DRepository {
-  def insertLocationRelation(listingId: UUID, location: DLocation) = {
+  def insertLocationRelation(listingId: UUID, locationId: UUID) = {
+    sql"""INSERT INTO listings_to_locations (listing_id, location_id) values ($listingId, $locationId)"""
+  }
+
+  def insertLocation(location: DLocation) = {
+    val id = location.id
     val name = location.name
-    sql"""INSERT INTO listings_to_locations (listing_id, location) values ($listingId, $name)"""
+    println("preparing insert statement for " + name)
+    sql"""INSERT INTO locations (id, name) values ($id, $name)"""
   }
 
-//  def insertLocation(location: DLocation) = {
-//    val id = UUID.randomUUID()
-//    val name = location.name
-//    println("preparing insert statement for " + name)
-//    sql"""INSERT INTO locations (id, name) values ($id, $name)"""
-//  }
+  def insertTechnologyRelation(listingId: UUID, techId: UUID) = {
+    sql"""INSERT INTO listings_to_technologies (listing_id, tech_id) values ($listingId, $techId)"""
+  }
 
-  def insertTechnologyRelation(listingId: UUID, tech: DTechnology) = {
+  def insertTechnology(tech: DTechnology) = {
+    val id = tech.id
     val name = tech.name
-    sql"""INSERT INTO listings_to_technologies (listing_id, technology) values ($listingId, $name)"""
-//    sql"""INSERT INTO technologies (id, name) values ($id, $name)"""
+    sql"""INSERT INTO technologies (id, name) values ($id, $name)"""
   }
-//  def insertTechnology(tech: DTechnology) = {
-//    val id = UUID.randomUUID()
-//    val name = tech.name
-//    sql"""INSERT INTO technologies (id, name) values ($id, $name)"""
-//  }
 
   def insertListing(listing: DListing) = {
     val id = listing.id
@@ -45,10 +43,9 @@ object DRepository {
     sql"""
          CREATE TABLE IF NOT EXISTS listings_to_locations (
              listing_id uuid,
-             location varchar,
---              location_id uuid,
-             CONSTRAINT fk_listing FOREIGN KEY(listing_id) REFERENCES listings(id)
---              CONSTRAINT fk_location FOREIGN KEY (location_id) REFERENCES locations(id)
+             location_id uuid,
+             CONSTRAINT fk_listing FOREIGN KEY(listing_id) REFERENCES listings(id),
+             CONSTRAINT fk_location FOREIGN KEY (location_id) REFERENCES locations(id)
          )
        """
 
@@ -56,10 +53,9 @@ object DRepository {
     sql"""
          CREATE TABLE IF NOT EXISTS listings_to_technologies (
              listing_id uuid,
-             technology varchar,
---              tech_id uuid,
-             CONSTRAINT fk_listing FOREIGN KEY(listing_id) REFERENCES listings(id)
---              CONSTRAINT fk_tech FOREIGN KEY (tech_id) REFERENCES technologies(id)
+             tech_id uuid,
+             CONSTRAINT fk_listing FOREIGN KEY(listing_id) REFERENCES listings(id),
+             CONSTRAINT fk_tech FOREIGN KEY (tech_id) REFERENCES technologies(id)
          )
        """
 
@@ -103,30 +99,36 @@ object DRepository {
         where company LIKE $name
     """.query[DListing]
 
+  // TODO can it happen that I have the same listing show up twice
+  //   when I search for e.g. java?
   def listingsByTechnology(tech: String) =
     sql"""
         SELECT l.id, l.company, l.text
         FROM listings as l
-        INNER JOIN listings_to_technologies as lt ON l.id = lt.listing_id
-        WHERE lt.technology = $tech
+        INNER JOIN listings_to_technologies lt on l.id = lt.listing_id
+        INNER JOIN technologies as t ON t.id = lt.tech_id
+        WHERE t.name = $tech
     """.query[DListing]
 
   def listingsByLocation(location: String) =
     sql"""
         SELECT l.id, l.company, l.text
         FROM listings as l
-        INNER JOIN listings_to_locations as ll ON l.id = ll.listing_id
-        WHERE ll.location = $location
+        INNER JOIN listings_to_locations ltl on l.id = ltl.listing_id
+        INNER JOIN locations l2 on l2.id = ltl.location_id
+        WHERE l2.name = $location
     """.query[DListing]
 
   def listingsByLocationAndTechnology(location: String, tech: String) =
     sql"""
         SELECT l.id, l.company, l.text
         FROM listings as l
-        INNER JOIN listings_to_locations as ll on l.id = ll.listing_id
-        INNER JOIN listings_to_technologies as lt on l.id = lt.listing_id
-        WHERE ll.location = $location
-        AND   lt.technology = $tech
+        INNER JOIN listings_to_locations ltl on l.id = ltl.listing_id
+        INNER JOIN locations l2 on l2.id = ltl.location_id
+        INNER JOIN listings_to_technologies ltt on l.id = ltt.listing_id
+        INNER JOIN technologies t on t.id = ltt.tech_id
+        WHERE l2.name = $location
+        AND t.name = $tech
     """.query[DListing]
 
   def locations =

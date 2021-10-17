@@ -24,21 +24,25 @@ object Crawler {
   private def fillTables(): Unit = {
     val service = DbService.fromDefaultConfig
     val cs = new CrawlerService()
-    val jobListings = cs.crawlComments()
+    val jobListings = cs.crawlComments().take(5)
       .map(JobListing.fromComment)
       .filter(_.isDefined)
       .map(_.get)
     val listings = jobListings.map(jl => DListing(jl.id, jl.company, jl.text))
 
     val insertListingsResult = service.insertListings(listings)
+    val insertLocations = jobListings.map(jl => jl.locations).map(service.insertLocations)
+    val insertTechnologies = jobListings.map(jl => jl.technologies).map(service.insertTechnologies)
     val insertLocationRelationResult = jobListings.map(jl =>
       jl.locations.map(loc =>
-        service.insertLocationRelation(jl.id, loc)))
+        service.insertLocationRelation(jl.id, loc.id)))
     val insertTechnologyRelationResult = jobListings.map(jl =>
       jl.technologies.map(tech =>
-        service.insertTechnologyRelation(jl.id, tech)))
+        service.insertTechnologyRelation(jl.id, tech.id)))
 
     println(insertListingsResult)
+    println(insertLocations)
+    println(insertTechnologies)
     println(insertLocationRelationResult)
     println(insertTechnologyRelationResult)
   }

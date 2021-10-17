@@ -24,38 +24,37 @@ class DbService(val xa: Aux[IO, Unit]) {
 
   def transact[A](q: Query0[A]) = q.to[List].transact(xa)
 
-//  def insertLocations(locs: Seq[DLocation]) = locs
-//    .map(DRepository.insertLocation)
-//    .map(_.update.run)
-//    .reduce(_ |+| _)
-//    .transact(xa).unsafeRunSync()
+  def insertLocations(locs: Seq[DLocation]) = locs
+    .map(DRepository.insertLocation)
+    .map(_.update.run.transact(xa))
+    .sequence
+    .unsafeRunSync()
 
-  def insertLocationRelation(listingId: UUID, loc: DLocation) =  {
-    DRepository.insertLocationRelation(listingId, loc)
+  def insertLocationRelation(listingId: UUID, locationId: UUID) =  {
+    DRepository.insertLocationRelation(listingId, locationId)
       .update.run
       .transact(xa).unsafeRunSync()
   }
 
-  def insertTechnologyRelation(listingId: UUID, tech: DTechnology) =  {
-    DRepository.insertTechnologyRelation(listingId, tech)
+  def insertTechnologyRelation(listingId: UUID, techId: UUID) =  {
+    DRepository.insertTechnologyRelation(listingId, techId)
       .update.run
       .transact(xa).unsafeRunSync()
   }
 
-
-//  def insertTechnologies(techs: Seq[DTechnology]) = techs
-//    .map(DRepository.insertTechnology)
-//    .map(_.update.run)
-//    .reduce(_ |+| _)
-//    .transact(xa).unsafeRunSync()
+  def insertTechnologies(techs: Seq[DTechnology]) = techs
+    .map(DRepository.insertTechnology)
+    .map(_.update.run.transact(xa))
+    .sequence
+    .unsafeRunSync()
 
   def insertListings(listings: Seq[DListing]) = listings
     .map(DRepository.insertListing)
-    .map(_.update.run)
-    .reduce(_ |+| _)
-    .transact(xa).unsafeRunSync()
+    .map(_.update.run.transact(xa))
+    .sequence
+    .unsafeRunSync()
 
-  // TODO this should happen in flyway or something
+  // TODO this should happen in flyway
   def createTables = {
     ((DRepository.createTableTechnologies
       ++ DRepository.createTableLocations
@@ -78,8 +77,7 @@ class DbService(val xa: Aux[IO, Unit]) {
 
   def listingsByTechnology(tech: String): IO[List[(String, String)]] = {
     val query = DRepository.listingsByTechnology(tech)
-    val transaction = transact(query)
-    transaction
+    transact(query)
       .map(_.map(dl => (dl.company, dl.text)))
   }
 
