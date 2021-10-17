@@ -12,7 +12,6 @@ object Crawler {
     createTables()
     fillTables()
     explainTables()
-
   }
 
   private def createTables(): Unit = {

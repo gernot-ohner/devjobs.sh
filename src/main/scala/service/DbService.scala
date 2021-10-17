@@ -19,9 +19,6 @@ import java.util.UUID
 
 class DbService(val xa: Aux[IO, Unit]) {
 
-  // this is some magic I have from here: https://medium.com/@arjun.dhawan/composing-doobie-programs-5337695fd77b
-  implicit def semigroup[F[_] : Apply, A: Semigroup]: Semigroup[F[A]] = Apply.semigroup[F, A]
-
   def transact[A](q: Query0[A]) = q.to[List].transact(xa)
 
   def insertLocations(locs: Seq[DLocation]) = locs
@@ -62,7 +59,9 @@ class DbService(val xa: Aux[IO, Unit]) {
       ).update.run,
       DRepository.createTableListingsToLocations.update.run,
       DRepository.createTableListingsToTechnologies.update.run)
-      .mapN(_ + _ + _).transact(xa).unsafeRunSync()
+      .map(_.transact(xa))
+      .sequence
+      .unsafeRunSync()
   }
 
   def listingsByLocationAndTechnology(location: String, tech: String): IO[List[(String, String)]] = {
