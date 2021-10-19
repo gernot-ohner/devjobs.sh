@@ -4,32 +4,22 @@ package service
 import model.DTechnology
 
 import java.util.UUID
+import scala.util.matching.Regex
 
 object TechnologyService {
-  // TODO deal with technologies like C and R
-  val technologies: Seq[String] = {
-    val cs = new CrawlerService()
-    cs.crawlTechnologies()
-  }
-  // make an extra list for things like Go that shouldn't be case insensitive
-  // TODO and I still need to handle things like "Go" vs "golang"
+  def findTechnologies(source: String): Seq[DTechnology] =
+    technologiesRegex.findAllMatchIn(source.appended(' '))
+      .map(tech => DTechnology(UUID.randomUUID(), tech.toString()))
+      .distinctBy(_.name)
+      .toSeq
 
-  // TODO and I also need to handle "java" vs "javascript"!
-  //   for that it would probably be good, if I just match the string
-  //   if it's standalone (i.e. surrounded by whitespace or punctuation)
+  private val cs = new CrawlerService()
 
-  // TODO I might want to make technologies their own type at some point
-  def findTechnologies(source: String): Seq[DTechnology] = {
-    // TODO make this more efficient!
-    //   is there actually a way to make this more efficient than O(n * m)
-    //   where n is number of words in source and m is number of technologies?
+  private val technologies: Seq[String] = cs.crawlTechnologies()
 
-    //   the most efficient way would be a single regex that matches every
-    //   technology and captures what it matched
-
-    // TODO profile how much time is spent here
+  private val technologiesRegex =
     technologies
-      .filter(tech => source.contains(tech.toLowerCase))
-      .map(tech => DTechnology(UUID.randomUUID(), tech))
-  }
+      .map(s => s"(?<=[\\p{Space}\\p{Punct}])(${Regex.quote(s)})(?=[\\p{Space}\\p{Punct}])")
+      .reduce((s1, s2) => s"$s1|$s2")
+      .r
 }
