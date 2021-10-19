@@ -23,20 +23,18 @@ object ParserService {
       .toVector
       .flatMap(locationRegex.split(_))
       .map(_.toLowerCase)
-      .map(deduplicate)
+      .map(removeParenthetical)
       .map(normalizeLocation)
       .map(_.trim)
       .distinct
-      // TODO fix this
       .map(locationName => DLocation(UUID.randomUUID(), locationName))
   }
 
   def parseCompanyName(headlineSections: Array[String]): String = {
-    deduplicate(headlineSections.head).trim
+    removeParenthetical(headlineSections.head).trim
   }
 
-  def deduplicate(s: String): String = {
+  def removeParenthetical(s: String): String = {
     s.replaceAll("\\([^()]*\\)", "")
-    // TODO transform NYC into New York City
   }
 }

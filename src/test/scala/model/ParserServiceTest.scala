@@ -9,19 +9,19 @@ import org.scalatest.funsuite.AnyFunSuite
 class ParserServiceTest extends AnyFunSuite with PrivateMethodTester {
 
   test("A location without a parenthetical be unchanged") {
-    val result = ParserService.deduplicate("remote")
+    val result = ParserService.removeParenthetical("remote")
 
     assert(result == "remote")
   }
 
   test("A location with a trailing parenthetical be truncated") {
-    val result = ParserService.deduplicate("remote (us)")
+    val result = ParserService.removeParenthetical("remote (us)")
 
     assert(result == "remote ")
   }
 
   test("A location with a surrounded parenthetical have the parenthetical removed") {
-    val result = ParserService.deduplicate("remote (us) ok")
+    val result = ParserService.removeParenthetical("remote (us) ok")
 
     assert(result == "remote  ok")
   }

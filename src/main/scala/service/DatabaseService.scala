@@ -17,7 +17,7 @@ import doobie.{Query0, Transactor}
 import java.util.UUID
 
 
-class DbService(val xa: Aux[IO, Unit]) {
+class DatabaseService(val xa: Aux[IO, Unit]) {
 
   def transact[A](q: Query0[A]) = q.to[List].transact(xa)
 
@@ -27,13 +27,13 @@ class DbService(val xa: Aux[IO, Unit]) {
     .sequence
     .unsafeRunSync()
 
-  def insertLocationRelation(listingId: UUID, locationId: UUID) =  {
+  def insertLocationRelation(listingId: UUID, locationId: UUID) = {
     DRepository.insertLocationRelation(listingId, locationId)
       .update.run
       .transact(xa).unsafeRunSync()
   }
 
-  def insertTechnologyRelation(listingId: UUID, techId: UUID) =  {
+  def insertTechnologyRelation(listingId: UUID, techId: UUID) = {
     DRepository.insertTechnologyRelation(listingId, techId)
       .update.run
       .transact(xa).unsafeRunSync()
@@ -53,14 +53,17 @@ class DbService(val xa: Aux[IO, Unit]) {
 
   // TODO this should happen in flyway
   def createTables = {
-    ((DRepository.createTableTechnologies
+    (DRepository.createTableTechnologies
       ++ DRepository.createTableLocations
       ++ DRepository.createTableListings
-      ).update.run,
-      DRepository.createTableListingsToLocations.update.run,
-      DRepository.createTableListingsToTechnologies.update.run)
-      .map(_.transact(xa))
-      .sequence
+      ).update.run.transact(xa).unsafeRunSync()
+
+    DRepository.createTableListingsToLocations.update.run
+      .transact(xa)
+      .unsafeRunSync()
+
+    DRepository.createTableListingsToTechnologies.update.run
+      .transact(xa)
       .unsafeRunSync()
   }
 
@@ -97,10 +100,10 @@ class DbService(val xa: Aux[IO, Unit]) {
   }
 }
 
-object DbService {
+object DatabaseService {
   def fromDefaultConfig = {
     val dbc = FullConfig.load.map(c => c.database).unsafeRunSync()
     val xa = Transactor.fromDriverManager[IO](dbc.driver, dbc.url, dbc.user, dbc.pw)
-    new DbService(xa)
+    new DatabaseService(xa)
   }
 }

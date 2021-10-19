@@ -1,7 +1,7 @@
 package dev.ohner
 package controllers
 
-import service.DbService
+import service.DatabaseService
 import ui.Pages
 
 import cats.effect.IO
@@ -12,7 +12,7 @@ import org.http4s.{HttpRoutes, Request}
 
 object ListingController {
 
-  val dbService = DbService.fromDefaultConfig
+  val dbService = DatabaseService.fromDefaultConfig
 
   def htmlService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {

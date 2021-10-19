@@ -2,7 +2,7 @@ package dev.ohner
 
 import model.{DListing, JobListing}
 
-import service.{CrawlerService, DbService}
+import service.{CrawlerService, DatabaseService}
 
 import cats.effect.unsafe.implicits.global
 
@@ -15,15 +15,15 @@ object Crawler {
   }
 
   private def createTables(): Unit = {
-    val service = DbService.fromDefaultConfig
+    val service = DatabaseService.fromDefaultConfig
     val tableCreationResult = service.createTables
     println(tableCreationResult)
   }
 
   private def fillTables(): Unit = {
-    val service = DbService.fromDefaultConfig
+    val service = DatabaseService.fromDefaultConfig
     val cs = new CrawlerService()
-    val jobListings = cs.crawlComments().take(5)
+    val jobListings = cs.crawlComments()
       .map(JobListing.fromComment)
       .filter(_.isDefined)
       .map(_.get)
@@ -47,7 +47,7 @@ object Crawler {
   }
 
   private def explainTables(): Unit = {
-    val service = DbService.fromDefaultConfig
+    val service = DatabaseService.fromDefaultConfig
     service.listingsByTechnology("java").attempt.map(println(_)).unsafeRunSync()
     service.listingsByLocation("remote").attempt.map(println(_)).unsafeRunSync()
     service.listingsByLocationAndTechnology("remote", "java")

@@ -1,7 +1,7 @@
 package dev.ohner
 package controllers
 
-import service.DbService
+import service.DatabaseService
 
 import cats.effect.IO
 import org.http4s.HttpRoutes
@@ -13,7 +13,7 @@ object ApiController {
 
   object TechnologyParamMatcher extends QueryParamDecoderMatcher[String]("technology")
 
-  val dbService = DbService.fromDefaultConfig
+  val dbService = DatabaseService.fromDefaultConfig
 
   def apiService: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
