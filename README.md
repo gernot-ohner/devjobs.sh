@@ -50,3 +50,15 @@ that is probably not a good move. fix that
 [ ] let the data flow through a stream that converts all of the synonyms into one name before
    committing to the db
 
+
+### Cool stuff
+// Railway Oriented Programming
+// I have a function `A -> B` that can fail
+// so instead it's signature is `A -> Either(E1, B)`
+// and another funtion `B -> Either(E2, C)`
+// how do I compose those?
+// I think the answer is "something, something Kleisli"
+
+
+`A -> B`
+`Kleisli[M, A, B] ==  A -> M[B]`

@@ -2,42 +2,51 @@ package dev.ohner
 package service
 
 import model.{Comment, Item, Story}
+import errors._
 
-import io.circe.jawn
+import cats.data.{EitherT, Kleisli}
+import cats.effect.{IO, Resource}
+import io.circe.{Json, ParsingFailure, jawn}
+import sttp.capabilities.fs2.Fs2Streams
+import sttp.client3.http4s.Http4sBackend
 import sttp.client3.{HttpURLConnectionBackend, Identity, Request, Response, SttpBackend, UriContext, basicRequest}
 import sttp.model.Uri
+import cats._
+import cats.effect.unsafe.implicits.global
+import cats.implicits._
+import cats.instances._
+import errors.RequestFailed
 
 class CrawlerService() {
-  val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
+  val backend = Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
 
-  def crawlComments(): Seq[Comment] = {
-    val items = getItems(JobPostProvider.ids.map(_.id))
-    val posts = items.filter(isStory).map(_.asInstanceOf[Story])
-
-    posts.map(_.kids)
-      .flatMap(getItems) // later change this to map, I don't actually want to lose the information when
-      .filter(isComment)
-      .map(_.asInstanceOf[Comment])
+  def crawlComments(): EitherT[IO, CustomError, Seq[Comment]] = {
+    val items: EitherT[IO, CustomError, Seq[Item]] = getItems(JobPostProvider.ids.map(_.id))
+    val stories = items.map(justTs[Story])
+    val kids: EitherT[IO, CustomError, Seq[Item]] = stories.flatMap(seq => getItems(seq.flatMap(_.kids)))
+    val comments = kids.map(justTs[Comment])
+    comments
   }
 
-  def crawlTechnologies(): Seq[String] = {
+  def crawlTechnologies(): EitherT[IO, CustomError, Seq[String]] = {
     val uri = uri"https://api.stackexchange.com/2.3/tags?order=desc&sort=popular&site=stackoverflow"
-    val value: Identity[Response[Either[String, String]]] = getWithDefaultBackend(uri)
-    val maybeJson = value.body.toOption.flatMap(s => jawn.parse(s).toOption)
-    val tags = maybeJson.map(_.findAllByKey("name")).getOrElse(List.empty)
-    tags.map(_.asString).filter(_.isDefined).map(_.get)
+    getWithDefaultBackendEitherT(uri)
+      .subflatMap(jawnParseWithCustomError)
+      .map(_.findAllByKey("name").map(_.toString()))
   }
 
-  private def getItems(ids: Seq[Int]) = {
-    ids
-      .map(id => getWithDefaultBackend(uri"https://hacker-news.firebaseio.com/v0/item/$id.json"))
-      .map(response => response.body)
-      .map(_.toOption)
-      .filter(_.isDefined)
-      .map(_.get)
-      .map(Item.parseFromString)
-      .filter(_.isDefined)
-      .map(_.get)
+
+  private def getItems(ids: Seq[Int]) =
+    ids.map(getSingleItem).sequence
+
+  private def getSingleItem(id: Int): EitherT[IO, CustomError, Item] = {
+    getWithDefaultBackendEitherT(uri"https://hacker-news.firebaseio.com/v0/item/$id.json")
+      .subflatMap(s => jawnParseWithCustomError(s))
+      .subflatMap(json => Item.parseFromJson(json))
+  }
+
+  def jawnParseWithCustomError(s: String) = {
+    jawn.parse(s).left.map(pf => JsonParsingFailed(pf.getMessage()))
   }
 
   private def isComment: Item => Boolean = {
@@ -50,12 +59,16 @@ class CrawlerService() {
     case _ => false
   }
 
-  private def getWithDefaultBackend(uri: Uri) = {
-    val request: Request[Either[String, String], Any] = basicRequest.get(uri)
-    request.send(backend)
+  private def getWithDefaultBackendEitherT(uri: Uri): EitherT[IO, CustomError, String] = {
+    EitherT(backend.use(be => basicRequest
+        .get(uri)
+        .send(be))
+        .map(_.body)
+        .map(_.left.map(RequestFailed)))
   }
 
-  def toString[T](title: String, seq: Seq[T]): String = {
-    seq.mkString(f"$title [", ", ", "]")
-  }
+  private def justTs[T <: Item](seq: Seq[_]): Seq[T] = seq
+    // warning "abstract type T is unchecked because it is eliminated by erasure"
+    .filter(_.isInstanceOf[T])
+    .map(_.asInstanceOf[T])
 }

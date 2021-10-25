@@ -35,4 +35,5 @@ libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.17.0"
 libraryDependencies += "org.postgresql" % "postgresql" % "42.2.24"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
 libraryDependencies += "com.softwaremill.sttp.client3" %% "core" % "3.3.15"
+libraryDependencies += "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.15" // for cats-effect 3.x & http4s 1.0.0-Mx
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.30.0"

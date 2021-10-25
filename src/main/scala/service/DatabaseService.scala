@@ -25,31 +25,29 @@ class DatabaseService(val xa: Aux[IO, Unit]) {
     .map(DRepository.insertLocation)
     .map(_.update.run.transact(xa))
     .sequence
-    .unsafeRunSync()
 
   def insertLocationRelation(listingId: UUID, locationId: UUID) = {
     DRepository.insertLocationRelation(listingId, locationId)
       .update.run
-      .transact(xa).unsafeRunSync()
+      .transact(xa)
   }
 
   def insertTechnologyRelation(listingId: UUID, techId: UUID) = {
     DRepository.insertTechnologyRelation(listingId, techId)
       .update.run
-      .transact(xa).unsafeRunSync()
+      .transact(xa)
   }
 
   def insertTechnologies(techs: Seq[DTechnology]) = techs
     .map(DRepository.insertTechnology)
     .map(_.update.run.transact(xa))
     .sequence
-    .unsafeRunSync()
+//    .unsafeRunSync()
 
   def insertListings(listings: Seq[DListing]) = listings
     .map(DRepository.insertListing)
     .map(_.update.run.transact(xa))
     .sequence
-    .unsafeRunSync()
 
   // TODO this should happen in flyway
   def createTables = {
