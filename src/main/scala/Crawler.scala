@@ -1,10 +1,10 @@
 package dev.ohner
 
-import errors.CustomError
-import model.{Comment, DListing, JobListing}
+import errors.{CommentParsingFailed, CustomError, ItemParsingFailed, JsonParsingFailed, RequestFailed}
+import model.{Comment, DListing, DLocation, DTechnology, JobListing}
 import service.{CrawlerService, DatabaseService}
 
-import cats.data.EitherT
+import cats.data.{EitherT, Nested}
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import cats.implicits._
@@ -12,7 +12,7 @@ import cats.implicits._
 object Crawler {
 
   def main(args: Array[String]): Unit = {
-//    createTables()
+    //    createTables()
     fillTables()
     explainTables()
   }
@@ -28,46 +28,29 @@ object Crawler {
 
   private def fillTables(): Unit = {
     val service = DatabaseService.fromDefaultConfig
-    val cs = new CrawlerService()
-    val comments: EitherT[IO, CustomError, Seq[Comment]] = cs.crawlComments()
-
-
-//    val yolo: IO[Either[MyError, Seq[Comment]]] = comments.seq
-
-    val jobListings = comments.flatMap(seq => seq.map(JobListing.fromComment).sequence)
-//    val jobListings: EitherT[IO, MyError, Seq[JobListing]] =
-//      comments.map(seq => seq.map(c => JobListing.fromComment(c))
-
-//    jobListings.sequence
-//      .map(io => io.map(justDefined))
-
-    val listings = jobListings.map(_.map(jl => DListing(jl.id, jl.company, jl.text)))
-
-    val insertListingsResult = listings.semiflatMap(service.insertListings)
-    val insertLocations = jobListings
-      .map(jls => jls.flatMap(_.locations))
-      .semiflatMap(service.insertLocations)
-    val insertTechnologies = jobListings
-      .map(jls => jls.flatMap(_.technologies))
-      .semiflatMap(service.insertTechnologies)
-
-    val all = insertListingsResult.value &> insertLocations.value &> insertTechnologies.value
-    all.unsafeRunSync()
-//    val insertLocationRelationResult = jobListings
-//      .map((jls: Seq[JobListing]) => jls
-//        .flatMap((jl: JobListing) => jl.locations
-//          .map((loc: DLocation) => service.insertLocationRelation(jl.id, loc.id))))
-//    val insertTechnologyRelationResult = jobListings.map(jls =>
-//      jls.flatMap(jl => jl.technologies.map(tech => service.insertTechnologyRelation(jl.id, tech.id))))
-
-
-
-//    println(insertListingsResult)
-//    println(insertLocations)
-//    println(insertTechnologies)
-//    println(insertLocationRelationResult)
-//    println(insertTechnologyRelationResult)
+    val result = new CrawlerService()
+      .crawlComments()
+      .flatMap(seq => seq.map(JobListing.fromComment).sequence)
+      .semiflatMap { listings =>
+        service.insertListings(listings.map(jl => DListing(jl.id, jl.company, jl.text))) *>
+          service.insertLocations(listings.flatMap(_.locations)) *>
+          service.insertTechnologies(listings.flatMap(_.technologies)) *>
+          listings.flatMap(jl => jl.locations.map(loc => service.insertLocationRelation(jl.id, loc.id))).sequence *>
+          listings.flatMap(jl => jl.technologies.map(tech => service.insertTechnologyRelation(jl.id, tech.id))).sequence
+      }.value.unsafeRunSync()
+    explain(result)
   }
+
+  private def explain(value: Either[CustomError, Seq[Int]]): Unit = value match {
+    case Left(value) => value match {
+      case RequestFailed(msg) => println(s"Request failed because: $msg")
+      case JsonParsingFailed(msg) => println(s"Json parsing failed because: $msg")
+      case ItemParsingFailed(msg) => println(s"Item parsing failed because: $msg")
+      case CommentParsingFailed(msg) => println(s"Comment parsing failed because: $msg")
+    }
+    case Right(value) => println("Succeeded: ", value)
+  }
+
 
   private def explainTables(): Unit = {
     val service = DatabaseService.fromDefaultConfig

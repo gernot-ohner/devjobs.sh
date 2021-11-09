@@ -13,8 +13,8 @@ import doobie.implicits._
 import doobie.postgres.implicits._
 import doobie.util.transactor.Transactor.Aux
 import doobie.{Query0, Transactor}
+import io.chrisdavenport.fuuid.FUUID
 
-import java.util.UUID
 
 
 class DatabaseService(val xa: Aux[IO, Unit]) {
@@ -26,13 +26,13 @@ class DatabaseService(val xa: Aux[IO, Unit]) {
     .map(_.update.run.transact(xa))
     .sequence
 
-  def insertLocationRelation(listingId: UUID, locationId: UUID) = {
+  def insertLocationRelation(listingId: FUUID, locationId: FUUID) = {
     DRepository.insertLocationRelation(listingId, locationId)
       .update.run
       .transact(xa)
   }
 
-  def insertTechnologyRelation(listingId: UUID, techId: UUID) = {
+  def insertTechnologyRelation(listingId: FUUID, techId: FUUID) = {
     DRepository.insertTechnologyRelation(listingId, techId)
       .update.run
       .transact(xa)

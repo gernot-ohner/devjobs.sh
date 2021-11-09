@@ -3,24 +3,27 @@ package db
 
 import model._
 
+import doobie._
 import doobie.implicits._
 import doobie.postgres.implicits._
+import io.chrisdavenport.fuuid.FUUID
+import io.chrisdavenport.fuuid.doobie.implicits._
 
-import java.util.UUID
 
 object DRepository {
-  def insertLocationRelation(listingId: UUID, locationId: UUID) = {
+  def insertLocationRelation(listingId: FUUID, locationId: FUUID) = {
+    println(f"Preparing insert statement for location relation: ($listingId, $locationId)")
     sql"""INSERT INTO listings_to_locations (listing_id, location_id) values ($listingId, $locationId)"""
   }
 
   def insertLocation(location: DLocation) = {
     val id = location.id
     val name = location.name
-    println("preparing insert statement for " + name)
+    println(f"preparing insert statement for location ($id, $name)")
     sql"""INSERT INTO locations (id, name) values ($id, $name)"""
   }
 
-  def insertTechnologyRelation(listingId: UUID, techId: UUID) = {
+  def insertTechnologyRelation(listingId: FUUID, techId: FUUID) = {
     sql"""INSERT INTO listings_to_technologies (listing_id, tech_id) values ($listingId, $techId)"""
   }
 
@@ -34,6 +37,7 @@ object DRepository {
     val id = listing.id
     val company = listing.company
     val text = listing.text
+    println(f"Preparing insert statement for listing: ($id, $company, ...)")
     sql"""INSERT INTO
     listings (id, company, text) values (
          $id, $company, $text)"""

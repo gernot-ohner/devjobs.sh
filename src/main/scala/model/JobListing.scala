@@ -7,17 +7,16 @@ import service.ParserService.{parseCompanyName, parseLocations}
 import service.TechnologyService
 
 import cats.data.EitherT
+import cats.implicits._
 import cats.effect.IO
+import io.chrisdavenport.fuuid.FUUID
 
-import java.util.UUID
-
-case class JobListing(company: String,
+case class JobListing(id: FUUID,
+                      company: String,
                       locations: Seq[DLocation],
                       technologies: Seq[DTechnology],
                       text: String,
-                     ) {
-  val id: UUID = UUID.randomUUID()
-}
+                     )
 
 object JobListing {
 
@@ -35,24 +34,33 @@ object JobListing {
     val paragraphs = comment.text.split(paragraphRegex)
     // TODO this does not look good. Comment parsing has nothing to do with IO
     //   but now I have to wrap it, because some sibling operation does?
-    if (paragraphs.isEmpty) return EitherT.left(IO { CommentParsingFailed("There are no paragraphs") })
-//    CommentParsingFailed("There are no paragraphs")
+    if (paragraphs.isEmpty) return EitherT.left(IO {
+      CommentParsingFailed("There are no paragraphs")
+    })
 
     val headlineSections = paragraphs.head.split(sectionRegex)
-    if (headlineSections.isEmpty) return EitherT.left(IO { CommentParsingFailed("There are no headline sections")})
+    if (headlineSections.isEmpty) return EitherT.left(IO {
+      CommentParsingFailed("There are no headline sections")
+    })
 
+    val fuuid = FUUID.randomFUUID[IO]
     val companyName = parseCompanyName(headlineSections)
-    val locations = parseLocations(headlineSections)
+    val locations = parseLocations(headlineSections).sequence
     val technologies: EitherT[IO, CustomError, Seq[DTechnology]] = TechnologyService.findTechnologies(comment.text.toLowerCase)
 
-    technologies.map((t: Seq[DTechnology]) => {
-      JobListing(
-        company = companyName,
-        locations = locations,
-        technologies = t,
-        text = comment.text,
-      )
-    })
+    technologies.semiflatMap { techs =>
+      locations.flatMap { locs =>
+        fuuid.map { id =>
+          JobListing(
+            id = id,
+            company = companyName,
+            locations = locs,
+            technologies = techs,
+            text = comment.text
+          )
+        }
+      }
+    }
   }
 }
 

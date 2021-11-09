@@ -32,8 +32,13 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies += "com.github.pureconfig" %% "pureconfig" % "0.17.0"
-libraryDependencies += "org.postgresql" % "postgresql" % "42.2.24"
+libraryDependencies += "org.postgresql" % "postgresql" % "42.3.1"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.10" % "test"
-libraryDependencies += "com.softwaremill.sttp.client3" %% "core" % "3.3.15"
-libraryDependencies += "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.15" // for cats-effect 3.x & http4s 1.0.0-Mx
+libraryDependencies += "com.softwaremill.sttp.client3" %% "core" % "3.3.16"
+libraryDependencies += "com.softwaremill.sttp.client3" %% "http4s-backend" % "3.3.16" // for cats-effect 3.x & http4s 1.0.0-Mx
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.30.0"
+
+libraryDependencies += "com.github.tomakehurst" % "wiremock-jre8-standalone" % "2.31.0"
+
+libraryDependencies += "io.chrisdavenport" % "fuuid_2.13" % "0.8.0-M2"
+libraryDependencies += "io.chrisdavenport" %% "fuuid-doobie" % "0.8.0-M2"

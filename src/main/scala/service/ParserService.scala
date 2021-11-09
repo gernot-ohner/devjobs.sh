@@ -3,6 +3,9 @@ package service
 
 import model.DLocation
 
+import cats.effect.IO
+import io.chrisdavenport.fuuid.FUUID
+
 import java.util.UUID
 
 object ParserService {
@@ -18,7 +21,7 @@ object ParserService {
       .replaceAll("(?i)NYC", "New York City")
   }
 
-  def parseLocations(headlineSections: Array[String]): Seq[DLocation] = {
+  def parseLocations(headlineSections: Array[String]): Seq[IO[DLocation]] = {
     headlineSections.lift(2)
       .toVector
       .flatMap(locationRegex.split(_))
@@ -27,7 +30,10 @@ object ParserService {
       .map(normalizeLocation)
       .map(_.trim)
       .distinct
-      .map(locationName => DLocation(UUID.randomUUID(), locationName))
+      .map(locationName => {
+        val fuuid = FUUID.randomFUUID[IO]
+        fuuid.map(id => DLocation(id, locationName))
+      })
   }
 
   def parseCompanyName(headlineSections: Array[String]): String = {

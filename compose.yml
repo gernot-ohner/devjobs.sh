@@ -10,3 +10,9 @@ services:
       POSTGRES_PASSWORD: example
     ports:
       - "5432:5432"
+
+  wiremock:
+    image: wiremock/wiremock
+    restart: always
+    ports:
+      - "18080:8080"

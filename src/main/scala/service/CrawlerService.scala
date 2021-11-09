@@ -21,17 +21,16 @@ class CrawlerService() {
   val backend = Http4sBackend.usingDefaultBlazeClientBuilder[IO](): Resource[IO, SttpBackend[IO, Fs2Streams[IO]]]
 
   def crawlComments(): EitherT[IO, CustomError, Seq[Comment]] = {
-    val items: EitherT[IO, CustomError, Seq[Item]] = getItems(JobPostProvider.ids.map(_.id))
+    val items: EitherT[IO, CustomError, Seq[Item]] = getItems(JobPostProvider.ids.take(2).map(_.id))
     val stories = items.map(justTs[Story])
-    val kids: EitherT[IO, CustomError, Seq[Item]] = stories.flatMap(seq => getItems(seq.flatMap(_.kids)))
+    val kids: EitherT[IO, CustomError, Seq[Item]] = stories.flatMap(seq => getItems(seq.flatMap(_.kids.take(10))))
     val comments = kids.map(justTs[Comment])
     comments
   }
 
-  def crawlTechnologies(): EitherT[IO, CustomError, Seq[String]] = {
-    val uri = uri"https://api.stackexchange.com/2.3/tags?order=desc&sort=popular&site=stackoverflow"
+  def crawlTechnologies(uri: Uri): EitherT[IO, CustomError, Seq[String]] = {
     getWithDefaultBackendEitherT(uri)
-      .subflatMap(jawnParseWithCustomError)
+      .subflatMap(parseJsonWithCustomError)
       .map(_.findAllByKey("name").map(_.toString()))
   }
 
@@ -40,13 +39,15 @@ class CrawlerService() {
     ids.map(getSingleItem).sequence
 
   private def getSingleItem(id: Int): EitherT[IO, CustomError, Item] = {
-    getWithDefaultBackendEitherT(uri"https://hacker-news.firebaseio.com/v0/item/$id.json")
-      .subflatMap(s => jawnParseWithCustomError(s))
-      .subflatMap(json => Item.parseFromJson(json))
+    val x = getWithDefaultBackendEitherT(uri"https://hacker-news.firebaseio.com/v0/item/$id.json")
+      .subflatMap(parseJsonWithCustomError)
+
+      x.subflatMap(json => Item.parseFromJson(json))
   }
 
-  def jawnParseWithCustomError(s: String) = {
-    jawn.parse(s).left.map(pf => JsonParsingFailed(pf.getMessage()))
+  def parseJsonWithCustomError(s: String) = {
+    io.circe.parser.parse(s)
+      .left.map(pf => JsonParsingFailed(pf.getMessage()))
   }
 
   private def isComment: Item => Boolean = {
@@ -61,14 +62,14 @@ class CrawlerService() {
 
   private def getWithDefaultBackendEitherT(uri: Uri): EitherT[IO, CustomError, String] = {
     EitherT(backend.use(be => basicRequest
-        .get(uri)
-        .send(be))
-        .map(_.body)
-        .map(_.left.map(RequestFailed)))
+      .get(uri)
+      .send(be))
+      .map(_.body)
+      .map(_.left.map(RequestFailed)))
   }
 
   private def justTs[T <: Item](seq: Seq[_]): Seq[T] = seq
-    // warning "abstract type T is unchecked because it is eliminated by erasure"
+    // TODO warning "abstract type T is unchecked because it is eliminated by erasure"
     .filter(_.isInstanceOf[T])
     .map(_.asInstanceOf[T])
 }
