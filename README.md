@@ -1,64 +1,36 @@
-# Idea
+# devjobs.sh
 
-provide a nice interface to go through the posts from the hn jobs post
+## Description
 
-## Pseudocode
+Includes two applications: A crawler and a server.
+The crawler retrieves comments on the "Who's Hiring" posts, parses them and inserts them into a database.
+The server provides an HTTP interface to retrieve job listings by location and by used technologies.
 
-1. get the jobs posts
-2. parse them 
-3. identify their children
-4. get all of those
-5. parse them, extracting
-    ... company 
-    ... locations (words that match, e.g. NYC, Boston, remote)
-    ... technologies (words that match, e.g. Java, Go, Scala )
-    ... levels (words matching junior, mid-level, senior)
-    ... salary (words matching $... or ...USD)
-    ... remote-friendliness (matching "remote", but not "not remote" or "currently remote")
-6. store them in a DB (postgres in docker?)
-7. expose a (functional TM) HTTP interface that allows you to provide 
+### Longer description
 
+Includes two applications: A crawler and a server.
 
-## improvements
-- instead of hardcoding NYC, Boston, get a list of the 100 biggest cities in the US
-- make the program realize that NYC and New York City are the same thing
-- Go might be a tough one with lots of false positives! Just match case-sensitive?
-- Also take a look at the ads == single job posts during the month
-  - (though that requires that I go through ever post again!)
- 
-- also add the functionality to filter by company
-- fix the encoding issues
-    maybe relevant: https://en.wikipedia.org/wiki/Percent-encoding
+The crawler first makes requests to the Hacker News API [0] for the "Who's Hiring" posts.
+Then for each post it retrieves all the first level children, i.e. the comments.
 
-- make the entire thing asynchronous.
-- automate the table & table schema creation
-- put the entire thing in a docker container
-- with all the Seq[String]s I have in my model, doing a NoSQL db might actually be better!
-- add metrics with http4s prometheus middleware
-- ADD TESTS
-## Todos
+Then it parses the retrieved text in various ways.
+Technologies are identified by getting a list of tags via the stackoverflow API 
+and doing a keyword search for them in the full text of a listing.
+Locations are parsed using the expected format of the posts
+"Company Name | Location 1, Location 2 | other information"
+(this does not work very well, because the posters are very inconsistent.
+In the future it might be good to migrate this to a keyword search as well)
 
-[x] exchange ujson (which is super nice but uses mutability)
-with circe (which is not as nice, but immutable)
+Once parsed, the data is inserted into the postgres database.
+![](./doc/erd.png)
 
-[x] at the moment i just assume that all fields in the response exist
-that is probably not a good move. fix that
+[0] hackernews.api-docs.io/
 
-[ ] slick supports codegen of the db entity class
-    use that
+## Interesting considerations
 
-[ ] let the data flow through a stream that converts all of the synonyms into one name before
-   committing to the db
+Effects are suspended in cats-effect `IO` 
+All effects (in particular, http request and database transactions) are executed asynchronously.
 
 
-### Cool stuff
-// Railway Oriented Programming
-// I have a function `A -> B` that can fail
-// so instead it's signature is `A -> Either(E1, B)`
-// and another funtion `B -> Either(E2, C)`
-// how do I compose those?
-// I think the answer is "something, something Kleisli"
-
-
-`A -> B`
-`Kleisli[M, A, B] ==  A -> M[B]`
+## other documentation
+[](./doc/todos.md) lists potential but currently not implemented improvements
